@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deploy</title>
+</head>
+<body>
+    <h1>Deploy Site</h1>
+    <button onclick="deploySite()">Deploy New Version</button>
+    <script>
+        function deploySite() {
+            fetch('/deploy', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert("Despliegue exitoso");
+                    } else {
+                        alert("Error en el despliegue");
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>
