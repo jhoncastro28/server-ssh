@@ -1,25 +1,38 @@
 const express = require('express');
-const {exec} = require('child_process');
-const { stdout, stderr } = require('process');
-const { error } = require('console');
+const { Client } = require('ssh2');
+const fs = require('fs');  // Para leer la clave privada
 const app = express();
-const PORT = 3000;
 
-app.post('/deploy', (req, res) => {
-    exec('ssh user@remote-server "bash "', (error, stdout, stderr) => {
-        if(error){
-            console.error(`Error: ${error.message}`);
-            return res.json({success: false});
-        }
-        if(stderr){
-            console.error(`Stderr: ${stederr}`);
-            return res.json({success: false});
-        }
-        console.log(`Stodut: ${stdout}`);
-        res.json({success: true});
+app.get('/deploy', (req, res) => {
+    const conn = new Client();
+    
+    conn.on('ready', () => {
+        console.log('Conectado al servidor!');
+        
+        conn.exec('bash /home/castrojhon/Documents/server-ssh/deploy.sh', (err, stream) => {
+            if (err) {
+                console.error('Error al ejecutar el script:', err);
+                return res.status(500).json({ success: false, message: 'Error al ejecutar el script.' });
+            }
+
+            stream.on('close', (code, signal) => {
+                console.log('El script de despliegue ha terminado.');
+                conn.end();
+                res.json({ success: true, message: 'Despliegue completado.' });
+            }).on('data', (data) => {
+                console.log('STDOUT: ' + data);
+            }).stderr.on('data', (data) => {
+                console.log('STDERR: ' + data);
+            });
+        });
+    }).connect({
+        host: '10.0.2.15',
+        port: 22,
+        username: 'castrojhon',
+        privateKey: fs.readFileSync('/home/castrojhon/.ssh/id_rsa')
     });
 });
 
-app.listen(PORT, () => {
-    console.log(`Servidor escuchando en puerto: ${PORT}`)
+app.listen(3000, () => {
+    console.log('Servidor escuchando en el puerto 3000');
 });
